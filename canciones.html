@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Users</title>
+	<meta charset="utf-8">
+
+	<!-- BOOTSTRAP -->
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0-beta.3/css/bootstrap.min.css" integrity="sha384-Zug+QiDoJOrZ5t4lssLdxGhVrurbmBWopoEl+M6BdEfwnCJZtKxi1KgxUyJq13dy" crossorigin="anonymous">
+	<!-- jQuery library -->
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+	<script type="text/javascript">
+
+		if(sessionStorage.getItem('token') != null){
+			var token = sessionStorage.getItem('token');
+		}else{
+			window.location.href="index.php";
+		}
+	
+	$(document).ready(function(){ 
+		$("#result").hide();
+		
+		 mostrarCanciones();
+                        
+		$("#submit").on("click",function(e){
+
+			var artist = $("#artist").val();
+            var title  = $("#title").val();
+            var reproducciones  = $("#reproducciones").val();
+            var url  = $("#url").val();
+	        e.preventDefault();
+            
+			$.ajax({
+			    url:"http://localhost/apiMusic/public/index.php/songs/createSong.json",
+			    type: "POST",
+			    data: {
+			    	'artist' : artist,
+                    'title' : title,
+                    'reproducciones' : reproducciones,
+                    'url' : url,
+			    },
+			    headers: { 'Authorization': token },
+			    dataType: 'json',
+			    success:function(response){
+                    
+			    	if(response.code == 200){
+			    		$("#result").removeClass("alert-danger");
+			    		$("#result").addClass("alert-success");
+			    		$("#listaCanciones").html("");
+			    		mostrarCanciones();         
+
+			    	}else{
+			    		$("#result").removeClass("alert-success");
+			    		$("#result").addClass("alert-danger");
+			    	}
+
+			    	$("#result").html(response.message);
+			    	$("#result").show();
+
+			    }
+			    	
+			});
+		});
+     });
+ 
+	function mostrarCanciones(){
+
+		$.ajax({
+			    url:"http://localhost/apiMusic/public/index.php/songs/songs.json",
+			    type: "GET",
+			    headers: { 'Authorization': token },
+			    dataType: 'json',
+			    success:function(response){
+
+                    console.log(response);
+                    $("#listaCanciones").html("");
+
+			    	if($("#listaCanciones").html() == ""){
+
+						$.each(response, function(i, song) {
+
+				    		$("#listaCanciones").append("<li id='" + song.id + "'class='list-cancione-item'>" + song.title + " " + song.artist + " " +  song.url + " <input type='button' name='delet' id='delet' onclick='deletUser(" + song.id + ")' class='btn btn-danger' value='Borrar'><span>" + "</span></li>");
+                        
+						});
+
+					}
+
+			    }
+			});
+
+	}
+
+        
+    function deletUser(id){
+          
+        $.ajax({
+			    url:"http://localhost/apiMusic/public/index.php/songs/delete.json",
+			    type: "POST",
+			    data: {
+			    	'id' : id,
+			    },
+			    headers: { 'Authorization': token },
+			    dataType: 'json',
+			    success:function(response){
+
+			    	if(response.code == 200){
+			    		mostrarCanciones();
+
+			    	}else{
+			    		$("#result").addClass("alert-danger");
+			    	}
+
+			    	$("#result").html(response.message);
+			    	$("#result").show();
+
+			    }
+			    	
+			});
+    }   
+        
+	function salir(){
+		sessionStorage.clear();
+		window.location.href = "index.php";
+	}
+
+	</script>
+
+</head>
+<body>
+
+	<div class="main container">
+
+		<h1>Aquí podras administrar tus canciones favoritas</h1>
+        
+
+		<form>
+			<div class="form-group">
+			<input type="text" placeholder="title" name="title" id="title">
+			<input type="text" placeholder="artist" name="artist" id="artist">
+			<input type="text" placeholder="reproducciones" name="reproducciones" id="reproducciones">
+            <input type="text" placeholder="url" name="url" id="url">
+            <input type="submit" class="btn btn-primary" name="submit" value="Añadir" id="submit">
+			</div>
+		</form>
+
+		<p id="result" class="alert alert-success" style="display:none"></p>
+
+		<hr>
+    
+		<ul class="list-canciones" id="listaCanciones"></ul>
+        
+        <br>
+        <br>
+        <br>
+		<button type="button" class="btn btn-danger" onclick="salir()">Salir / Cerrar sesión</button>
+
+	</div>
+
+</body>
+</html>
